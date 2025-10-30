@@ -1,0 +1,82 @@
+
+:root{
+  --bg:#0f1115;
+  --panel:#161a22;
+  --panel-2:#1d2230;
+  --text:#e6e6ea;
+  --muted:#b3b8c5;
+  --accent:#7aa2f7;
+  --accent-2:#8bd5ca;
+  --danger:#ef5350;
+  --success:#9ccc65;
+  --warning:#ffd166;
+  --radius:14px;
+  --shadow:0 8px 24px rgba(0,0,0,0.35);
+  --border:1px solid rgba(255,255,255,0.07);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(1200px 600px at 10% -10%, #1a2030 10%, transparent 70%),
+    radial-gradient(900px 500px at 120% 10%, #132030 10%, transparent 70%),
+    var(--bg);
+  background-attachment: fixed;
+}
+
+a{
+  color:var(--text);
+  text-decoration:none;
+}
+.nav a, .btn{
+  display:inline-block;
+  background:linear-gradient(180deg, var(--panel-2), var(--panel));
+  color:var(--text);
+  padding:10px 14px;
+  border-radius:12px;
+  border:var(--border);
+  box-shadow:var(--shadow);
+  margin:6px 10px;
+  transition: transform .12s ease, box-shadow .12s ease, background .2s ease;
+}
+.btn:hover, .nav a:hover{ transform: translateY(-2px); box-shadow:0 12px 32px rgba(0,0,0,.45); }
+.btn.primary{ background: linear-gradient(180deg, #21304a, #182238); border-color:#2a3a56; }
+.btn.green{ background: linear-gradient(180deg, #1e3a2f, #15271f); border-color:#254a3b; }
+.btn.red{ background: linear-gradient(180deg, #3a1e22, #271518); border-color:#4a252a; }
+
+header{
+  backdrop-filter: blur(6px);
+  background: rgba(20,24,32,.6);
+  border-bottom: var(--border);
+  position:sticky; top:0; z-index:10;
+}
+.wrap{max-width:1100px; margin:0 auto; padding:18px 20px;}
+.title{
+  font-size: clamp(20px, 4vw, 28px);
+  margin:8px 0 0 0;
+  letter-spacing:.2px;
+}
+main{max-width:1100px; margin:16px auto; padding:16px;}
+.card{
+  background:linear-gradient(180deg, var(--panel-2), var(--panel));
+  border:var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:18px;
+}
+.grid{display:grid; gap:16px;}
+.grid.cols-2{ grid-template-columns: 1fr; }
+@media(min-width:900px){ .grid.cols-2{ grid-template-columns: 1.1fr .9fr; } }
+
+.heading{font-weight:700; margin:0 0 10px 0; color:#eef; letter-spacing:.2px;}
+.muted{color:var(--muted);}
+
+canvas{ width:100% !important; height:auto !important; max-width:780px; margin:8px auto 0; display:block; }
+
+.nav{ text-align:center; margin-top:18px; }
+
+footer{ text-align:center; color:var(--muted); padding:18px 0 28px 0; }
