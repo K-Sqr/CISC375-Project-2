@@ -93,12 +93,10 @@ export function render({ title, age, countsByDrug, prev, next, nav }) {
     </div></header>
     <main>
       {{INNER}}
-      <div class="nav">{{NAV}}</div>
     </main>
     <footer>Drug Use Dynamic Viewer • Dark</footer>
     </body></html>`
     .replace("${title}", title)
-    .replace("{{INNER}}", inner)
-    .replace("{{NAV}}", navButtons);
+    .replace("{{INNER}}", inner);
   return page;
 }
