@@ -1,4 +1,4 @@
-export function render({ title, age, countsByDrug, prev, next }) {
+export function render({ title, age, countsByDrug, prev, next, nav }) {
   const labels = Object.keys(countsByDrug || {});
   const data = Object.values(countsByDrug || {});
   const minVal = data.length ? Math.min(...data) : 0;
@@ -15,41 +15,69 @@ export function render({ title, age, countsByDrug, prev, next }) {
 
   const nav = `${prev ? `<a class="btn green" href="/age/${prev}">← Prev</a>` : ""}${next ? `<a class="btn green" href="/age/${next}">Next →</a>` : ""} <a class="btn primary" href="/">Home</a>`;
 
-  const inner = `<section class="grid cols-2">
-      <div class="card">
+  // build a side list of ages for quick navigation (keeps styling consistent with dark theme)
+  const ages = (nav && nav.ages) ? nav.ages : [];
+  const agesList = `<aside style="width:220px;flex:0 0 220px">
+    <div class="card" style="padding:12px;">
+      <h3 class="heading">Ages</h3>
+      <p class="muted" style="margin-top:6px;margin-bottom:8px">Click an age to jump to its data.</p>
+      <ul class="side-list" style="list-style:none;padding:0;margin:0;max-height:420px;overflow:auto">
+        ${ages.map(a => `<li style=\"margin:6px 0\"><a href=\"/age/${a}\" class=\"age-link ${a===age? 'active' : ''}\">${a}</a></li>`).join('')}
+      </ul>
+    </div>
+  </aside>`;
+
+  const chartCard = `<div class="card" style="flex:1;min-width:260px">
         <h2 class="heading">Age ${age} • Weighted Use</h2>
         <canvas id="ageChart"></canvas>
-      </div>
-      <div class="card">
+      </div>`;
+
+  const infoCard = `<div class="card" style="min-width:260px">
         <h3 class="heading">About this view</h3>
         <p class="muted">The pie chart shows weighted drug-use percentages for age ${age}. Slice size corresponds to prevalence.</p>
         ${minMaxList}
+      </div>`;
+
+  const inner = `<div class="layout" style="display:flex;gap:14px;align-items:flex-start;">
+      ${agesList}
+      <div style="display:flex;flex-direction:column;flex:1;gap:12px">
+        <div style="display:flex;gap:12px;flex-wrap:wrap">${chartCard}${infoCard}</div>
+        <div class="nav">${nav ? '' : ''}</div>
       </div>
-    </section>
+    </div>
     <script>
-      const ctx = document.getElementById('ageChart');
-      const darkTicks = '#cdd3e1';
-      const gridColor = 'rgba(255,255,255,0.08)';
-      new Chart(ctx, {
-        type: 'pie',
-        data: {
-          labels: ${JSON.stringify(labels)},
-          datasets: [{
-            label: 'Drug Usage (%)',
-            data: ${JSON.stringify(data)},
-            backgroundColor: ${JSON.stringify([
-              '#7aa2f7','#8bd5ca','#ffd166','#f38ba8','#cba6f7',
-              '#94e2d5','#fab387','#f2cdcd','#b4befe','#89b4fa'
-            ].slice(0, labels.length))},
-            borderColor: '#0f1115',
-            borderWidth: 2
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { position: 'bottom', labels: { color: darkTicks } } }
-        }
-      });
+      (function(){
+        const ctx = document.getElementById('ageChart');
+        const darkTicks = '#cdd3e1';
+        new Chart(ctx, {
+          type: 'pie',
+          data: {
+            labels: ${JSON.stringify(labels)},
+            datasets: [{
+              label: 'Drug Usage (%)',
+              data: ${JSON.stringify(data)},
+              backgroundColor: ${JSON.stringify([
+                '#7aa2f7','#8bd5ca','#ffd166','#f38ba8','#cba6f7',
+                '#94e2d5','#fab387','#f2cdcd','#b4befe','#89b4fa'
+              ].slice(0, labels.length))},
+              borderColor: '#0f1115',
+              borderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom', labels: { color: darkTicks } } }
+          }
+        });
+        // small client-side enhancement: mark active link class styling
+        const style = document.createElement('style');
+        style.innerHTML = `
+          .age-link{ color:#61a0ff; text-decoration:none; display:block; padding:6px 8px; border-radius:6px }
+          .age-link.active{ background:#111214; color:#fff; }
+          @media (max-width:700px){ .layout{ flex-direction:column } .age-link{ display:inline-block } }
+        `;
+        document.head.appendChild(style);
+      })();
     </script>`;
 
   const page = `<!doctype html><html><head><meta charset="utf-8">
