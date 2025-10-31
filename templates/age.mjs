@@ -13,7 +13,7 @@ export function render({ title, age, countsByDrug, prev, next, nav }) {
     <li><strong>Maximum:</strong> ${maxVal}${typeof maxVal === "number" ? "%" : ""} ${maxLabel ? `(${maxLabel})` : ""}</li>
   </ul>`;
 
-  const nav = `${prev ? `<a class="btn green" href="/age/${prev}">← Prev</a>` : ""}${next ? `<a class="btn green" href="/age/${next}">Next →</a>` : ""} <a class="btn primary" href="/">Home</a>`;
+  const navButtons = `${prev ? `<a class="btn green" href="/age/${prev}">← Prev</a>` : ""}${next ? `<a class="btn green" href="/age/${next}">Next →</a>` : ""} <a class="btn primary" href="/">Home</a>`;
 
   // build a side list of ages for quick navigation (keeps styling consistent with dark theme)
   const ages = (nav && nav.ages) ? nav.ages : [];
@@ -42,7 +42,7 @@ export function render({ title, age, countsByDrug, prev, next, nav }) {
       ${agesList}
       <div style="display:flex;flex-direction:column;flex:1;gap:12px">
         <div style="display:flex;gap:12px;flex-wrap:wrap">${chartCard}${infoCard}</div>
-        <div class="nav">${nav ? '' : ''}</div>
+        <div class="nav">${navButtons}</div>
       </div>
     </div>
     <script>
@@ -71,11 +71,7 @@ export function render({ title, age, countsByDrug, prev, next, nav }) {
         });
         // small client-side enhancement: mark active link class styling
         const style = document.createElement('style');
-        style.innerHTML = `
-          .age-link{ color:#61a0ff; text-decoration:none; display:block; padding:6px 8px; border-radius:6px }
-          .age-link.active{ background:#111214; color:#fff; }
-          @media (max-width:700px){ .layout{ flex-direction:column } .age-link{ display:inline-block } }
-        `;
+        style.innerHTML = '.age-link{ color:#61a0ff; text-decoration:none; display:block; padding:6px 8px; border-radius:6px } .age-link.active{ background:#111214; color:#fff; } @media (max-width:700px){ .layout{ flex-direction:column } .age-link{ display:inline-block } }';
         document.head.appendChild(style);
       })();
     </script>`;
@@ -103,6 +99,6 @@ export function render({ title, age, countsByDrug, prev, next, nav }) {
     </body></html>`
     .replace("${title}", title)
     .replace("{{INNER}}", inner)
-    .replace("{{NAV}}", nav);
+    .replace("{{NAV}}", navButtons);
   return page;
 }

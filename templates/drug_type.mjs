@@ -13,7 +13,7 @@ export function render({ title, type, countsByAge, prev, next, nav }) {
     <li><strong>Maximum:</strong> ${maxVal}${typeof maxVal === "number" ? "%" : ""} ${maxLabel ? `(${maxLabel})` : ""}</li>
   </ul>`;
 
-  const nav = `${prev ? `<a class="btn" href="/drug_type/${prev}">← Prev</a>` : ""}${next ? `<a class="btn" href="/drug_type/${next}">Next →</a>` : ""} <a class="btn primary" href="/">Home</a>`;
+  const navButtons = `${prev ? `<a class="btn" href="/drug_type/${prev}">← Prev</a>` : ""}${next ? `<a class="btn" href="/drug_type/${next}">Next →</a>` : ""} <a class="btn primary" href="/">Home</a>`;
 
   const types = (nav && nav.types) ? nav.types : [];
   const typesList = `<aside style="width:240px;flex:0 0 240px">
@@ -65,11 +65,7 @@ export function render({ title, type, countsByAge, prev, next, nav }) {
           options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: darkTicks } } } }
         });
         const style = document.createElement('style');
-        style.innerHTML = `
-          .type-link{ color:#61a0ff; text-decoration:none; display:block; padding:6px 8px; border-radius:6px }
-          .type-link.active{ background:#111214; color:#fff; }
-          @media (max-width:700px){ .layout{ flex-direction:column } .type-link{ display:inline-block } }
-        `;
+        style.innerHTML = '.type-link{ color:#61a0ff; text-decoration:none; display:block; padding:6px 8px; border-radius:6px } .type-link.active{ background:#111214; color:#fff; } @media (max-width:700px){ .layout{ flex-direction:column } .type-link{ display:inline-block } }';
         document.head.appendChild(style);
       })();
     </script>`;
@@ -97,6 +93,6 @@ export function render({ title, type, countsByAge, prev, next, nav }) {
     </body></html>`
     .replace("${title}", title)
     .replace("{{INNER}}", inner)
-    .replace("{{NAV}}", nav);
+    .replace("{{NAV}}", navButtons);
   return page;
 }
