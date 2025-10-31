@@ -32,11 +32,24 @@ export function render({ title, age, countsByDrug, prev, next, nav }) {
         <canvas id="ageChart"></canvas>
       </div>`;
 
+  const placeholder = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="360"><rect fill="#1f2024" width="100%" height="100%"/><text x="50%" y="50%" fill="#cdd3e1" font-size="20" font-family="Arial" text-anchor="middle" dy=".3em">No image available</text></svg>');
+  const ageImg = (nav && nav.ageImages && nav.ageImages[age]) ? nav.ageImages[age] : placeholder;
+
   const infoCard = `<div class="card" style="min-width:260px">
         <h3 class="heading">About this view</h3>
         <p class="muted">The pie chart shows weighted drug-use percentages for age ${age}. Slice size corresponds to prevalence.</p>
         ${minMaxList}
-      </div>`;
+        </div>
+        <div class="card">
+          <h3 class="heading">Age Group Representation</h3>
+          <div style="text-align: center; padding: 10px;">
+            <img src="${ageImg}" 
+                 alt="Representative image for age ${age}"
+                 style="max-width: 100%; height: auto; border-radius: 8px; margin-bottom: 10px;"
+            />
+          </div>
+        </div>`;
+
 
   const inner = `<div class="layout" style="display:flex;gap:14px;align-items:flex-start;">
       ${agesList}

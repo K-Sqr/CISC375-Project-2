@@ -14,7 +14,9 @@ const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Serve static files
 app.use("/static", express.static(path.join(__dirname, "static")));
+app.use("/static/img", express.static(path.join(__dirname, "img")));
 
 /* ---- CSV ---- */
 function parseCSV(text){
@@ -36,46 +38,97 @@ async function init(){
   const txt = fs.readFileSync(csvPath, "utf8");
   const rows = parseCSV(txt);
   DATA.rows = rows;
-  const ages = Array.from(new Set(rows.map(r => String(r.age))))
-    .map(a => Number(a)).filter(n => Number.isFinite(n))
-    .sort((a,b)=>a-b).map(n => String(n));
+  // keep the original age keys from the CSV (these include ranges like "22-23")
+  const ages = Array.from(new Set(rows.map(r => String(r.age))));
   const first = rows[0] || {};
   const types = Object.keys(first).filter(k => k.endsWith("_use")).map(k => k.replace(/_use$/,""));
   DATA.agesSorted = ages;
   DATA.typesSorted = types;
-// Recompute ages to include every individual age, expanding any ranges like "22-23"
-(function rebuildAges(){
-  const agesSet = new Set();
-  for (const r of rows) {
-    const a = String(r.age);
-    const m = /^\s*(\d+)\s*-\s*(\d+)\s*$/.exec(a);
-    if (m) {
-      const low = Number(m[1]); const high = Number(m[2]);
-      for (let n = low; n <= high; n++) agesSet.add(String(n));
-    } else {
-      const n = Number(a);
-      if (Number.isFinite(n)) agesSet.add(String(n));
-    }
+  DATA.agesSorted = ages;
+
+  // Build image maps for ages and drug types so templates can reference exact URLs
+  function pickFirstImageIn(dirPath){
+    try{
+      const files = fs.readdirSync(dirPath);
+      const img = files.find(f => /\.(jpe?g|png|webp)$/i.test(f));
+      return img ? path.join(dirPath, img) : null;
+    }catch(e){ return null; }
   }
-  DATA.agesSorted = Array.from(agesSet).map(Number).sort((a,b)=>a-b).map(String);
-})();
+
+  const ageImageMap = {};
+  const agePhotosRoot = path.join(__dirname, 'img', 'AgePhotos');
+  // many age images live under AgePhotos/AgePhotos or directly
+  const agePhotosDirs = [path.join(agePhotosRoot, 'AgePhotos'), agePhotosRoot];
+  for (const a of DATA.agesSorted){
+    // prefer exact file Age{age}.ext under AgePhotos/AgePhotos
+    let found = null;
+    for (const dir of agePhotosDirs){
+      if (!dir) continue;
+      try{
+        const files = fs.readdirSync(dir);
+        // try exact name like Age22-23.jpg or Age19.jpg
+        const exact = files.find(f => f.toLowerCase().startsWith(('age' + a).toLowerCase()) && /\.(jpe?g|png|webp)$/i.test(f));
+        if (exact) { found = path.join('/static/img', path.relative(path.join(__dirname, 'img'), path.join(dir, exact)).replace(/\\/g,'/')); break; }
+        // try directory named Age19 etc
+        const dirName = files.find(fn => fn.toLowerCase() === ('age' + a).toLowerCase());
+        if (dirName){
+          const candidate = pickFirstImageIn(path.join(dir, dirName));
+          if (candidate) { found = path.join('/static/img', path.relative(path.join(__dirname, 'img'), candidate).replace(/\\/g,'/')); break; }
+        }
+      }catch(e){ /* ignore */ }
+    }
+    // fallback: map to group ranges
+    if (!found){
+      const n = Number(a);
+      let group = null;
+      if (Number.isFinite(n)){
+        if (n <= 19) group = 'Age19';
+        else if (n >= 26 && n <= 29) group = 'Age26-29';
+        else if (n >= 50 && n <= 64) group = 'Age50-64';
+        else if (n >= 65) group = 'Age65+';
+        else group = 'Age26-29';
+      }
+      if (group){
+        const candidate = pickFirstImageIn(path.join(agePhotosRoot, 'AgePhotos', group)) || pickFirstImageIn(path.join(agePhotosRoot, group));
+        if (candidate) found = path.join('/static/img', path.relative(path.join(__dirname, 'img'), candidate).replace(/\\/g,'/'));
+      }
+    }
+    ageImageMap[a] = found || null;
+  }
+
+  const drugImageMap = {};
+  const drugPhotosRoot = path.join(__dirname, 'img', 'DrugPhotos');
+  const drugPhotosDirs = [path.join(drugPhotosRoot, 'DrugPhotos'), drugPhotosRoot];
+  for (const t of DATA.typesSorted){
+    let found = null;
+    for (const dir of drugPhotosDirs){
+      try{
+        const files = fs.readdirSync(dir);
+        // try to find a file that contains the drug type name
+        const match = files.find(f => f.toLowerCase().includes(t.toLowerCase()) && /\.(jpe?g|png|webp)$/i.test(f));
+        if (match){
+          found = path.join('/static/img', path.relative(path.join(__dirname, 'img'), path.join(dir, match)).replace(/\\/g,'/'));
+          break;
+        }
+      }catch(e){ /* ignore */ }
+    }
+    drugImageMap[t] = found || null;
+  }
+
+  DATA.ageImageMap = ageImageMap;
+  DATA.drugImageMap = drugImageMap;
 
 }
 
 /* ---- Helpers ---- */
 function navLinks(){
-  return { ages: DATA.agesSorted, types: DATA.typesSorted, freqs: DATA.typesSorted };
+  return { ages: DATA.agesSorted, types: DATA.typesSorted, freqs: DATA.typesSorted, ageImages: DATA.ageImageMap, drugImages: DATA.drugImageMap };
 }
 
 function sequentialNeighborsForAge(ageStr){
-  const nums = DATA.agesSorted.map(a=>Number(a));
-  const minA = Math.min(...nums);
-  const maxA = Math.max(...nums);
-  const a = Number(ageStr);
-  if (!Number.isFinite(a)) return { prev: null, next: null };
-  const prev = a > minA ? String(a-1) : null;
-  const next = a < maxA ? String(a+1) : null;
-  return { prev, next };
+  const idx = DATA.agesSorted.indexOf(String(ageStr));
+  if (idx === -1) return { prev: null, next: null };
+  return { prev: idx>0?DATA.agesSorted[idx-1]:null, next: idx<DATA.agesSorted.length-1?DATA.agesSorted[idx+1]:null };
 }
 
 function sequentialNeighborsFromArray(arr, key){
@@ -143,54 +196,44 @@ app.get("/", (req,res)=>{
   res.send(html);
 });
 
-// === Age route with expanded ranges ===
 app.get("/age/:age", async (req, res) => {
-  const age = String(req.params.age);
-  let rows = DATA.rows.filter(r => String(r.age) === age);
-  let rangeFound = null;
-  if (!rows.length) {
-    for (const r of DATA.rows) {
-      const match = /^\s*(\d+)\s*-\s*(\d+)\s*$/.exec(String(r.age));
-      if (match) {
-        const low = Number(match[1]);
-        const high = Number(match[2]);
-        if (age >= low && age <= high) {
-          rows = [r];
-          rangeFound = `${low}-${high}`;
-          break;
-        }
+  const raw = String(req.params.age);
+  const nav = navLinks();
+
+  // first try exact match (this catches ranges like "22-23" and single ages stored in CSV)
+  let row = DATA.rows.find(r => String(r.age) === raw);
+  let usedKey = raw;
+
+  // if not exact, and raw is numeric, find a range row that contains it
+  if (!row) {
+    const n = Number(raw);
+    if (Number.isFinite(n)){
+      for (const r of DATA.rows){
+        const m = /^\s*(\d+)\s*-\s*(\d+)\s*$/.exec(String(r.age));
+        if (m){
+          const low = Number(m[1]); const high = Number(m[2]);
+          if (n >= low && n <= high){ row = r; usedKey = String(r.age); break; }
+        } else if (Number(String(r.age)) === n){ row = r; usedKey = String(r.age); break; }
       }
     }
   }
 
-  const { prev, next } = sequentialNeighborsForAge(age);
-  const nav = navLinks();
-  if (!rows.length) {
-    const html = await renderTemplate("error", { title: "Error", message: `Error: no data for age ${age}`, prev, next, route: "age", key: age, nav });
+  // if still not found, return 404 with helpful message
+  if (!row){
+    const html = await renderTemplate("error", { title: `Age ${raw}`, message: `Error: no data for age ${raw}`, prev: null, next: null, route: "age", key: raw, nav });
     return res.status(404).send(html);
   }
 
-  const row = rows[0];
+  // compute prev/next based on ordering in DATA.agesSorted
+  const { prev, next } = sequentialNeighborsForAge(usedKey);
+
   const weights = {};
-  for (const t of DATA.typesSorted) {
+  for (const t of DATA.typesSorted){
     const v = Number(row[`${t}_use`]);
     if (Number.isFinite(v) && v > 0) weights[t] = v;
   }
 
-  const disclaimer = rangeFound
-    ? `This age falls within the ${rangeFound} range; data shown is identical for all ages in this range.`
-    : "";
-
-  const html = await renderTemplate("age", {
-    title: `Age ${age}`,
-    age,
-    rows,
-    countsByDrug: weights,
-    prev,
-    next,
-    nav,
-    disclaimer
-  });
+  const html = await renderTemplate("age", { title: `Age ${usedKey}`, age: usedKey, rows: [row], countsByDrug: weights, prev, next, nav });
   res.send(html);
 });
 
@@ -349,4 +392,4 @@ server.on('error', (err) => {
   }
   console.error('Server error:', err);
   process.exit(1);
-});
+}); 

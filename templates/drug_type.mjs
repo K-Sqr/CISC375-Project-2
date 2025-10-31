@@ -31,11 +31,23 @@ export function render({ title, type, countsByAge, prev, next, nav }) {
         <canvas id="drugChart"></canvas>
       </div>`;
 
+  const placeholder = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="360"><rect fill="#1f2024" width="100%" height="100%"/><text x="50%" y="50%" fill="#cdd3e1" font-size="20" font-family="Arial" text-anchor="middle" dy=".3em">No image available</text></svg>');
+  const drugImg = (nav && nav.drugImages && nav.drugImages[type]) ? nav.drugImages[type] : placeholder;
+
   const infoCard = `<div class="card" style="min-width:260px">
         <h3 class="heading">About this view</h3>
         <p class="muted">The pie chart shows the weighted usage of ${type} across ages. Larger slices indicate higher prevalence within that age.</p>
         ${minMaxList}
-      </div>`;
+        </div>
+        <div class="card">
+          <h3 class="heading">Drug Type Information</h3>
+          <div style="text-align: center; padding: 10px;">
+            <img src="${drugImg}" 
+                 alt="Representative image for ${type}"
+                 style="max-width: 100%; height: auto; border-radius: 8px; margin-bottom: 10px;"
+            />
+          </div>
+        </div>`;
 
   const inner = `<div class="layout" style="display:flex;gap:14px;align-items:flex-start;">
       ${typesList}
@@ -79,6 +91,8 @@ export function render({ title, type, countsByAge, prev, next, nav }) {
     <style>
       .minmax-list { margin-top: .5rem; padding-left: 1.25rem; }
       .minmax-list li { margin: .15rem 0; color: #cdd3e1; }
+        img { box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); transition: transform 0.2s; }
+        img:hover { transform: scale(1.02); }
     </style>
 
 </head><body>
